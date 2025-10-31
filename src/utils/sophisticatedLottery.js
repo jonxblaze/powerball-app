@@ -1,29 +1,4 @@
-/**
- * Parses JSON data from the Powerball results dataset
- * @returns {Promise<Array>} Array of winning number sets
- */
-export const parseJsonData = async () => {
-  // Import the JSON data directly
-  const response = await fetch(new URL('./powerball_results.json', import.meta.url));
-  const data = await response.json();
-  
-  // Transform the JSON data to the format expected by the algorithms
-  // Each entry has WinningNumbers with keys 0-5, where 0-4 are main balls and 5 is Powerball
-  const winningNumbers = data.map(entry => {
-    const numbers = [];
-    
-    // Extract numbers 0-5 from the WinningNumbers object
-    for (let i = 0; i <= 5; i++) {
-      if (entry.WinningNumbers[i]) {
-        numbers.push(parseInt(entry.WinningNumbers[i].Number));
-      }
-    }
-    
-    return numbers;
-  }).filter(numbers => numbers.length === 6); // Ensure we have exactly 6 numbers (5 main + 1 Powerball)
-  
-  return winningNumbers;
-};
+
 
 /**
  * Sophisticated algorithm combining multiple approaches
@@ -98,13 +73,13 @@ export const generateSophisticatedNumbers = (allWinningNumbers, algorithmType = 
 };
 
 /**
- * Fetches and parses the Powerball results from the JSON file
+ * Fetches and parses the Powerball results from the API endpoint
  * @returns {Promise<Object>} Object with winningNumbers array and sorted original data
  */
 export const parsePowerballData = async () => {
   try {
-    // Using fetch to get the JSON data
-    const response = await fetch(new URL('./powerball_results.json', import.meta.url));
+    // Fetch from the backend API endpoint
+    const response = await fetch('/api/powerball-data');
     if (!response.ok) {
       throw new Error(`Failed to load Powerball data: ${response.status} ${response.statusText}`);
     }
@@ -135,6 +110,30 @@ export const parsePowerballData = async () => {
     return { winningNumbers, sortedData };
   } catch (error) {
     console.error('Error parsing Powerball data:', error);
+    throw error;
+  }
+};
+
+/**
+ * Updates the Powerball data by calling the backend API
+ * @returns {Promise<Object>} Response from the update endpoint
+ */
+export const updatePowerballData = async () => {
+  try {
+    const response = await fetch('/api/update-powerball', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to update Powerball data: ${response.status} ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating Powerball data:', error);
     throw error;
   }
 };
@@ -213,43 +212,105 @@ const generateByHotCold = (allWinningNumbers) => {
 
   // Find hot (most frequent in recent) and cold (least frequent in recent) numbers
   const recentMainBallCounts = {};
+  const olderMainBallCounts = {};
+  
   recentMainBalls.forEach(num => {
     recentMainBallCounts[num] = (recentMainBallCounts[num] || 0) + 1;
   });
+  
+  olderMainBalls.forEach(num => {
+    olderMainBallCounts[num] = (olderMainBallCounts[num] || 0) + 1;
+  });
 
+  // Get all possible main balls (1-69)
+  const allPossibleNumbers = Array.from({length: 69}, (_, i) => i + 1);
+  
+  // Identify hot numbers (frequently appearing in recent draws)
+  const sortedByRecentFreq = Object.entries(recentMainBallCounts)
+    .sort(([, countA], [, countB]) => countB - countA); // Most frequent first (hot)
+  
+  // Identify cold numbers (rarely appearing in recent draws but appearing in older draws)
+  // First, get numbers that appeared in older draws but have low frequency in recent draws
+  const coldCandidateNumbers = Object.keys(olderMainBallCounts)
+    .filter(num => parseInt(num))
+    .map(Number)
+    .filter(num => !recentMainBallCounts[num] || recentMainBallCounts[num] < 2); // Consider as cold if not in recent or low frequency
+  
+  // Take top hot numbers and add some randomness
+  const topHotNumbers = sortedByRecentFreq.slice(0, 10); // Take top 10 hot numbers
+  const hotMainBalls = [];
+  for (let i = 0; i < 2 && topHotNumbers.length > 0; i++) {
+    const randomIndex = Math.floor(Math.random() * Math.min(3, topHotNumbers.length)); // Pick from top 3 to add randomness
+    const [num] = topHotNumbers.splice(randomIndex, 1)[0];
+    hotMainBalls.push(Number(num));
+  }
+  
+  // Get cold numbers (least frequent in recent or not recent) and add randomness
+  const shuffledColdCandidates = [...coldCandidateNumbers].sort(() => Math.random() - 0.5); // Shuffle cold numbers
+  const coldMainBalls = shuffledColdCandidates.slice(0, Math.max(0, 5 - hotMainBalls.length)); // Fill remaining slots
+
+  // Combine and ensure we have exactly 5 unique main balls
+  let combinedMainBalls = [...new Set([...hotMainBalls, ...coldMainBalls])];
+  
+  // If we don't have enough numbers, fill with random numbers not in recent hot draws
+  if (combinedMainBalls.length < 5) {
+    const availableNumbers = allPossibleNumbers.filter(
+      num => !combinedMainBalls.includes(num)
+    );
+    
+    while (combinedMainBalls.length < 5 && availableNumbers.length > 0) {
+      const randomIndex = Math.floor(Math.random() * availableNumbers.length);
+      const randomNum = availableNumbers.splice(randomIndex, 1)[0];
+      combinedMainBalls.push(randomNum);
+    }
+  }
+  
+  // Sort the main balls
+  const mainBalls = combinedMainBalls.slice(0, 5).sort((a, b) => a - b);
+
+  // For Powerball: do similar hot/cold analysis
   const recentPowerballCounts = {};
+  const olderPowerballCounts = {};
+  
   recentPowerballs.forEach(num => {
     recentPowerballCounts[num] = (recentPowerballCounts[num] || 0) + 1;
   });
-
-  // Sort main balls: mix of hot and cold
-  const sortedByRecent = Object.entries(recentMainBallCounts)
-    .sort(([, countA], [, countB]) => countB - countA); // Most frequent first (hot)
-
-  const hotMainBalls = sortedByRecent.slice(0, 2).map(([num]) => Number(num)); // Take 2 hot numbers
-
-  // For cold numbers, we need to get numbers that appeared least in recent draws
-  const allMainBalls = [...new Set([...recentMainBalls, ...olderMainBalls])]; // All unique numbers
-  const coldMainBalls = allMainBalls
-    .filter(num => !recentMainBallCounts[num]) // Numbers not in recent draws
-    .slice(0, 3); // Take 3 cold numbers
-
-  const mainBalls = [...hotMainBalls, ...coldMainBalls].sort((a, b) => a - b);
-
-  // For Powerball: take most frequent in recent (hot) or least frequent (cold) if none exist
-  const hotPowerballs = Object.entries(recentPowerballCounts)
+  
+  olderPowerballs.forEach(num => {
+    olderPowerballCounts[num] = (olderPowerballCounts[num] || 0) + 1;
+  });
+  
+  // Identify hot powerballs (frequently in recent draws)
+  const sortedHotPowerballs = Object.entries(recentPowerballCounts)
     .sort(([, countA], [, countB]) => countB - countA)
     .map(([num]) => Number(num));
-
-  // Add some randomness by selecting from top few
+  
+  // Identify cold powerballs (in older draws but not recent)
+  const coldPowerballCandidates = Object.keys(olderPowerballCounts)
+    .filter(num => parseInt(num))
+    .map(Number)
+    .filter(num => !recentPowerballCounts[num] || recentPowerballCounts[num] < 2);
+    
+  // Choose either a hot or cold powerball
   let powerball;
-  if (hotPowerballs.length > 0) {
-    const topHotPowerballs = hotPowerballs.slice(0, 3); // Take top 3 most frequent
+  const useHotPowerball = Math.random() > 0.3; // 70% chance to use hot, 30% to use cold
+  
+  if (useHotPowerball && sortedHotPowerballs.length > 0) {
+    // Choose hot powerball (pick from top few to add randomness)
+    const topHotPowerballs = sortedHotPowerballs.slice(0, Math.min(5, sortedHotPowerballs.length));
+    powerball = topHotPowerballs[Math.floor(Math.random() * topHotPowerballs.length)];
+  } else if (coldPowerballCandidates.length > 0) {
+    // Choose cold powerball (from shuffled list to add randomness)
+    const shuffledColdPowerballs = [...coldPowerballCandidates].sort(() => Math.random() - 0.5);
+    powerball = shuffledColdPowerballs[0];
+  } else if (sortedHotPowerballs.length > 0) {
+    // Fallback to hot powerball if no cold ones available
+    const topHotPowerballs = sortedHotPowerballs.slice(0, Math.min(3, sortedHotPowerballs.length));
     powerball = topHotPowerballs[Math.floor(Math.random() * topHotPowerballs.length)];
   } else {
-    // Use all powerballs from the original dataset if no recent ones
+    // Fallback to any powerball from the dataset
     const allPowerballs = allWinningNumbers.map(numbers => numbers[numbers.length - 1]);
-    powerball = allPowerballs.length > 0 ? Math.max(...allPowerballs) : 1;
+    powerball = allPowerballs.length > 0 ? allPowerballs[Math.floor(Math.random() * allPowerballs.length)] : 1;
   }
 
   return { mainBalls, powerball };

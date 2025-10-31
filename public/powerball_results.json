@@ -1,5 +1,433 @@
 [
   {
+    "DrawNumber": 1530,
+    "DrawDate": "2025-10-29T07:00:00",
+    "DrawCloseTime": null,
+    "JackpotAmount": null,
+    "EstimatedCashValue": null,
+    "WinningNumbers": {
+      "0": {
+        "Number": "4",
+        "IsSpecial": false,
+        "Name": null
+      },
+      "1": {
+        "Number": "24",
+        "IsSpecial": false,
+        "Name": null
+      },
+      "2": {
+        "Number": "49",
+        "IsSpecial": false,
+        "Name": null
+      },
+      "3": {
+        "Number": "60",
+        "IsSpecial": false,
+        "Name": null
+      },
+      "4": {
+        "Number": "65",
+        "IsSpecial": false,
+        "Name": null
+      },
+      "5": {
+        "Number": "1",
+        "IsSpecial": true,
+        "Name": null
+      }
+    },
+    "Prizes": {
+      "1": {
+        "PrizeTypeDescription": "5 + Powerball",
+        "Count": 0,
+        "Amount": 376000000,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "2": {
+        "PrizeTypeDescription": "5",
+        "Count": 1,
+        "Amount": 1840664,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "3": {
+        "PrizeTypeDescription": "4 + Powerball",
+        "Count": 0,
+        "Amount": 31448,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "4": {
+        "PrizeTypeDescription": "4",
+        "Count": 28,
+        "Amount": 561,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "5": {
+        "PrizeTypeDescription": "3 + Powerball",
+        "Count": 99,
+        "Amount": 165,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "6": {
+        "PrizeTypeDescription": "3",
+        "Count": 2203,
+        "Amount": 8,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "7": {
+        "PrizeTypeDescription": "2 + Powerball",
+        "Count": 1774,
+        "Amount": 10,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "8": {
+        "PrizeTypeDescription": "1 + Powerball",
+        "Count": 14309,
+        "Amount": 5,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "9": {
+        "PrizeTypeDescription": "Powerball",
+        "Count": 35191,
+        "Amount": 4,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      }
+    },
+    "WinningRetailers": [],
+    "RaceTime": null,
+    "DrawCloseDateTime": null
+  },
+  {
+    "DrawNumber": 1529,
+    "DrawDate": "2025-10-27T07:00:00",
+    "DrawCloseTime": null,
+    "JackpotAmount": null,
+    "EstimatedCashValue": null,
+    "WinningNumbers": {
+      "0": {
+        "Number": "17",
+        "IsSpecial": false,
+        "Name": null
+      },
+      "1": {
+        "Number": "39",
+        "IsSpecial": false,
+        "Name": null
+      },
+      "2": {
+        "Number": "43",
+        "IsSpecial": false,
+        "Name": null
+      },
+      "3": {
+        "Number": "51",
+        "IsSpecial": false,
+        "Name": null
+      },
+      "4": {
+        "Number": "66",
+        "IsSpecial": false,
+        "Name": null
+      },
+      "5": {
+        "Number": "20",
+        "IsSpecial": true,
+        "Name": null
+      }
+    },
+    "Prizes": {
+      "1": {
+        "PrizeTypeDescription": "5 + Powerball",
+        "Count": 0,
+        "Amount": 358000000,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "2": {
+        "PrizeTypeDescription": "5",
+        "Count": 0,
+        "Amount": 1717819,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "3": {
+        "PrizeTypeDescription": "4 + Powerball",
+        "Count": 1,
+        "Amount": 29430,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "4": {
+        "PrizeTypeDescription": "4",
+        "Count": 29,
+        "Amount": 507,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "5": {
+        "PrizeTypeDescription": "3 + Powerball",
+        "Count": 76,
+        "Amount": 201,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "6": {
+        "PrizeTypeDescription": "3",
+        "Count": 2027,
+        "Amount": 8,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "7": {
+        "PrizeTypeDescription": "2 + Powerball",
+        "Count": 1683,
+        "Amount": 9,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "8": {
+        "PrizeTypeDescription": "1 + Powerball",
+        "Count": 13576,
+        "Amount": 5,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "9": {
+        "PrizeTypeDescription": "Powerball",
+        "Count": 33954,
+        "Amount": 4,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      }
+    },
+    "WinningRetailers": [],
+    "RaceTime": null,
+    "DrawCloseDateTime": null
+  },
+  {
+    "DrawNumber": 1528,
+    "DrawDate": "2025-10-25T07:00:00",
+    "DrawCloseTime": null,
+    "JackpotAmount": null,
+    "EstimatedCashValue": null,
+    "WinningNumbers": {
+      "0": {
+        "Number": "2",
+        "IsSpecial": false,
+        "Name": null
+      },
+      "1": {
+        "Number": "12",
+        "IsSpecial": false,
+        "Name": null
+      },
+      "2": {
+        "Number": "22",
+        "IsSpecial": false,
+        "Name": null
+      },
+      "3": {
+        "Number": "39",
+        "IsSpecial": false,
+        "Name": null
+      },
+      "4": {
+        "Number": "67",
+        "IsSpecial": false,
+        "Name": null
+      },
+      "5": {
+        "Number": "15",
+        "IsSpecial": true,
+        "Name": null
+      }
+    },
+    "Prizes": {
+      "1": {
+        "PrizeTypeDescription": "5 + Powerball",
+        "Count": 0,
+        "Amount": 344000000,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "2": {
+        "PrizeTypeDescription": "5",
+        "Count": 0,
+        "Amount": 1602856,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "3": {
+        "PrizeTypeDescription": "4 + Powerball",
+        "Count": 2,
+        "Amount": 37940,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "4": {
+        "PrizeTypeDescription": "4",
+        "Count": 68,
+        "Amount": 330,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "5": {
+        "PrizeTypeDescription": "3 + Powerball",
+        "Count": 125,
+        "Amount": 187,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "6": {
+        "PrizeTypeDescription": "3",
+        "Count": 3865,
+        "Amount": 6,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "7": {
+        "PrizeTypeDescription": "2 + Powerball",
+        "Count": 2991,
+        "Amount": 8,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "8": {
+        "PrizeTypeDescription": "1 + Powerball",
+        "Count": 22450,
+        "Amount": 5,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "9": {
+        "PrizeTypeDescription": "Powerball",
+        "Count": 52896,
+        "Amount": 4,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      }
+    },
+    "WinningRetailers": [],
+    "RaceTime": null,
+    "DrawCloseDateTime": null
+  },
+  {
+    "DrawNumber": 1527,
+    "DrawDate": "2025-10-22T07:00:00",
+    "DrawCloseTime": null,
+    "JackpotAmount": null,
+    "EstimatedCashValue": null,
+    "WinningNumbers": {
+      "0": {
+        "Number": "18",
+        "IsSpecial": false,
+        "Name": null
+      },
+      "1": {
+        "Number": "37",
+        "IsSpecial": false,
+        "Name": null
+      },
+      "2": {
+        "Number": "52",
+        "IsSpecial": false,
+        "Name": null
+      },
+      "3": {
+        "Number": "54",
+        "IsSpecial": false,
+        "Name": null
+      },
+      "4": {
+        "Number": "60",
+        "IsSpecial": false,
+        "Name": null
+      },
+      "5": {
+        "Number": "12",
+        "IsSpecial": true,
+        "Name": null
+      }
+    },
+    "Prizes": {
+      "1": {
+        "PrizeTypeDescription": "5 + Powerball",
+        "Count": 0,
+        "Amount": 320000000,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "2": {
+        "PrizeTypeDescription": "5",
+        "Count": 0,
+        "Amount": 1427038,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "3": {
+        "PrizeTypeDescription": "4 + Powerball",
+        "Count": 0,
+        "Amount": 30870,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "4": {
+        "PrizeTypeDescription": "4",
+        "Count": 30,
+        "Amount": 514,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "5": {
+        "PrizeTypeDescription": "3 + Powerball",
+        "Count": 91,
+        "Amount": 176,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "6": {
+        "PrizeTypeDescription": "3",
+        "Count": 2092,
+        "Amount": 8,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "7": {
+        "PrizeTypeDescription": "2 + Powerball",
+        "Count": 1776,
+        "Amount": 9,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "8": {
+        "PrizeTypeDescription": "1 + Powerball",
+        "Count": 14877,
+        "Amount": 5,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      },
+      "9": {
+        "PrizeTypeDescription": "Powerball",
+        "Count": 38060,
+        "Amount": 4,
+        "PrizeTypeMultipliers": null,
+        "TotalPayout": null
+      }
+    },
+    "WinningRetailers": [],
+    "RaceTime": null,
+    "DrawCloseDateTime": null
+  },
+  {
     "DrawNumber": 1526,
     "DrawDate": "2025-10-20T07:00:00",
     "DrawCloseTime": null,
@@ -12188,434 +12616,6 @@
       "9": {
         "PrizeTypeDescription": "Powerball",
         "Count": 26136,
-        "Amount": 4,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      }
-    },
-    "WinningRetailers": [],
-    "RaceTime": null,
-    "DrawCloseDateTime": null
-  },
-  {
-    "DrawNumber": 1412,
-    "DrawDate": "2025-01-27T08:00:00",
-    "DrawCloseTime": null,
-    "JackpotAmount": null,
-    "EstimatedCashValue": null,
-    "WinningNumbers": {
-      "0": {
-        "Number": "2",
-        "IsSpecial": false,
-        "Name": null
-      },
-      "1": {
-        "Number": "40",
-        "IsSpecial": false,
-        "Name": null
-      },
-      "2": {
-        "Number": "47",
-        "IsSpecial": false,
-        "Name": null
-      },
-      "3": {
-        "Number": "53",
-        "IsSpecial": false,
-        "Name": null
-      },
-      "4": {
-        "Number": "55",
-        "IsSpecial": false,
-        "Name": null
-      },
-      "5": {
-        "Number": "20",
-        "IsSpecial": true,
-        "Name": null
-      }
-    },
-    "Prizes": {
-      "1": {
-        "PrizeTypeDescription": "5 + Powerball",
-        "Count": 0,
-        "Amount": 56000000,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "2": {
-        "PrizeTypeDescription": "5",
-        "Count": 0,
-        "Amount": 2237334,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "3": {
-        "PrizeTypeDescription": "4 + Powerball",
-        "Count": 1,
-        "Amount": 18461,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "4": {
-        "PrizeTypeDescription": "4",
-        "Count": 28,
-        "Amount": 329,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "5": {
-        "PrizeTypeDescription": "3 + Powerball",
-        "Count": 43,
-        "Amount": 223,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "6": {
-        "PrizeTypeDescription": "3",
-        "Count": 1289,
-        "Amount": 8,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "7": {
-        "PrizeTypeDescription": "2 + Powerball",
-        "Count": 1025,
-        "Amount": 10,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "8": {
-        "PrizeTypeDescription": "1 + Powerball",
-        "Count": 8652,
-        "Amount": 5,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "9": {
-        "PrizeTypeDescription": "Powerball",
-        "Count": 21012,
-        "Amount": 4,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      }
-    },
-    "WinningRetailers": [],
-    "RaceTime": null,
-    "DrawCloseDateTime": null
-  },
-  {
-    "DrawNumber": 1411,
-    "DrawDate": "2025-01-25T08:00:00",
-    "DrawCloseTime": null,
-    "JackpotAmount": null,
-    "EstimatedCashValue": null,
-    "WinningNumbers": {
-      "0": {
-        "Number": "8",
-        "IsSpecial": false,
-        "Name": null
-      },
-      "1": {
-        "Number": "15",
-        "IsSpecial": false,
-        "Name": null
-      },
-      "2": {
-        "Number": "17",
-        "IsSpecial": false,
-        "Name": null
-      },
-      "3": {
-        "Number": "53",
-        "IsSpecial": false,
-        "Name": null
-      },
-      "4": {
-        "Number": "66",
-        "IsSpecial": false,
-        "Name": null
-      },
-      "5": {
-        "Number": "14",
-        "IsSpecial": true,
-        "Name": null
-      }
-    },
-    "Prizes": {
-      "1": {
-        "PrizeTypeDescription": "5 + Powerball",
-        "Count": 0,
-        "Amount": 46000000,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "2": {
-        "PrizeTypeDescription": "5",
-        "Count": 0,
-        "Amount": 2165218,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "3": {
-        "PrizeTypeDescription": "4 + Powerball",
-        "Count": 1,
-        "Amount": 28258,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "4": {
-        "PrizeTypeDescription": "4",
-        "Count": 34,
-        "Amount": 415,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "5": {
-        "PrizeTypeDescription": "3 + Powerball",
-        "Count": 84,
-        "Amount": 174,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "6": {
-        "PrizeTypeDescription": "3",
-        "Count": 2191,
-        "Amount": 7,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "7": {
-        "PrizeTypeDescription": "2 + Powerball",
-        "Count": 1818,
-        "Amount": 8,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "8": {
-        "PrizeTypeDescription": "1 + Powerball",
-        "Count": 14043,
-        "Amount": 5,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "9": {
-        "PrizeTypeDescription": "Powerball",
-        "Count": 32679,
-        "Amount": 4,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      }
-    },
-    "WinningRetailers": [],
-    "RaceTime": null,
-    "DrawCloseDateTime": null
-  },
-  {
-    "DrawNumber": 1410,
-    "DrawDate": "2025-01-22T08:00:00",
-    "DrawCloseTime": null,
-    "JackpotAmount": null,
-    "EstimatedCashValue": null,
-    "WinningNumbers": {
-      "0": {
-        "Number": "5",
-        "IsSpecial": false,
-        "Name": null
-      },
-      "1": {
-        "Number": "6",
-        "IsSpecial": false,
-        "Name": null
-      },
-      "2": {
-        "Number": "27",
-        "IsSpecial": false,
-        "Name": null
-      },
-      "3": {
-        "Number": "40",
-        "IsSpecial": false,
-        "Name": null
-      },
-      "4": {
-        "Number": "49",
-        "IsSpecial": false,
-        "Name": null
-      },
-      "5": {
-        "Number": "5",
-        "IsSpecial": true,
-        "Name": null
-      }
-    },
-    "Prizes": {
-      "1": {
-        "PrizeTypeDescription": "5 + Powerball",
-        "Count": 0,
-        "Amount": 31000000,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "2": {
-        "PrizeTypeDescription": "5",
-        "Count": 0,
-        "Amount": 2054835,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "3": {
-        "PrizeTypeDescription": "4 + Powerball",
-        "Count": 2,
-        "Amount": 8820,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "4": {
-        "PrizeTypeDescription": "4",
-        "Count": 12,
-        "Amount": 735,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "5": {
-        "PrizeTypeDescription": "3 + Powerball",
-        "Count": 58,
-        "Amount": 158,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "6": {
-        "PrizeTypeDescription": "3",
-        "Count": 1443,
-        "Amount": 7,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "7": {
-        "PrizeTypeDescription": "2 + Powerball",
-        "Count": 1291,
-        "Amount": 7,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "8": {
-        "PrizeTypeDescription": "1 + Powerball",
-        "Count": 9367,
-        "Amount": 4,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "9": {
-        "PrizeTypeDescription": "Powerball",
-        "Count": 21404,
-        "Amount": 4,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      }
-    },
-    "WinningRetailers": [],
-    "RaceTime": null,
-    "DrawCloseDateTime": null
-  },
-  {
-    "DrawNumber": 1409,
-    "DrawDate": "2025-01-20T08:00:00",
-    "DrawCloseTime": null,
-    "JackpotAmount": null,
-    "EstimatedCashValue": null,
-    "WinningNumbers": {
-      "0": {
-        "Number": "15",
-        "IsSpecial": false,
-        "Name": null
-      },
-      "1": {
-        "Number": "16",
-        "IsSpecial": false,
-        "Name": null
-      },
-      "2": {
-        "Number": "32",
-        "IsSpecial": false,
-        "Name": null
-      },
-      "3": {
-        "Number": "47",
-        "IsSpecial": false,
-        "Name": null
-      },
-      "4": {
-        "Number": "54",
-        "IsSpecial": false,
-        "Name": null
-      },
-      "5": {
-        "Number": "6",
-        "IsSpecial": true,
-        "Name": null
-      }
-    },
-    "Prizes": {
-      "1": {
-        "PrizeTypeDescription": "5 + Powerball",
-        "Count": 0,
-        "Amount": 20000000,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "2": {
-        "PrizeTypeDescription": "5",
-        "Count": 0,
-        "Amount": 1985925,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "3": {
-        "PrizeTypeDescription": "4 + Powerball",
-        "Count": 1,
-        "Amount": 15847,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "4": {
-        "PrizeTypeDescription": "4",
-        "Count": 15,
-        "Amount": 528,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "5": {
-        "PrizeTypeDescription": "3 + Powerball",
-        "Count": 55,
-        "Amount": 149,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "6": {
-        "PrizeTypeDescription": "3",
-        "Count": 1190,
-        "Amount": 7,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "7": {
-        "PrizeTypeDescription": "2 + Powerball",
-        "Count": 1035,
-        "Amount": 8,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "8": {
-        "PrizeTypeDescription": "1 + Powerball",
-        "Count": 8082,
-        "Amount": 5,
-        "PrizeTypeMultipliers": null,
-        "TotalPayout": null
-      },
-      "9": {
-        "PrizeTypeDescription": "Powerball",
-        "Count": 19269,
         "Amount": 4,
         "PrizeTypeMultipliers": null,
         "TotalPayout": null
