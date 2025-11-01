@@ -78,8 +78,12 @@ export const generateSophisticatedNumbers = (allWinningNumbers, algorithmType = 
  */
 export const parsePowerballData = async () => {
   try {
-    // Fetch from the backend API endpoint
-    const response = await fetch('/api/powerball-data');
+    // Determine API base: Use VITE_API_BASE if set, otherwise use deployed server
+    // Set VITE_API_BASE='' to use relative URLs (for local proxy) or another URL to override
+    const apiBase = (import.meta?.env?.VITE_API_BASE !== undefined 
+      ? import.meta.env.VITE_API_BASE 
+      : 'https://app.jbwebdev.com/app').replace(/\/$/, '');
+    const response = await fetch(`${apiBase}/api/powerball-data`);
     if (!response.ok) {
       throw new Error(`Failed to load Powerball data: ${response.status} ${response.statusText}`);
     }
@@ -120,7 +124,12 @@ export const parsePowerballData = async () => {
  */
 export const updatePowerballData = async () => {
   try {
-    const response = await fetch('/api/update-powerball', {
+    // Determine API base: Use VITE_API_BASE if set, otherwise use deployed server
+    // Set VITE_API_BASE='' to use relative URLs (for local proxy) or another URL to override
+    const apiBase = (import.meta?.env?.VITE_API_BASE !== undefined 
+      ? import.meta.env.VITE_API_BASE 
+      : 'https://app.jbwebdev.com/app').replace(/\/$/, '');
+    const response = await fetch(`${apiBase}/api/update-powerball`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
