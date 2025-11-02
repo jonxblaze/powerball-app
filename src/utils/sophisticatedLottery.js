@@ -163,9 +163,9 @@ export const updatePowerballData = () => {
         mode: 'no-cors'
       }).catch(() => {}); // Ignore errors silently
     }
-  } catch (e) {
+  } catch (error) {
     // If everything fails, silently ignore
-    console.log("Update initiated via fallback method");
+    console.log("Update initiated via fallback method", error.message);
   }
 
   // Return a resolved promise immediately to indicate success
@@ -371,7 +371,7 @@ const generateByBalancedDistribution = (allWinningNumbers) => {
   // For Powerball, use frequency analysis
   const allPowerballs = allWinningNumbers.map(numbers => numbers[numbers.length - 1]);
   const powerballCounts = countFrequencies(allPowerballs);
-  const powerball = selectPowerballByFrequency(powerballCounts, allWinningNumbers);
+  const powerball = selectPowerballByFrequency(powerballCounts);
   
   return { mainBalls: uniqueMainBalls.slice(0, 5).sort((a, b) => a - b), powerball };
 };
@@ -464,7 +464,7 @@ const generateByPatterns = (allWinningNumbers) => {
   // For Powerball, use frequency analysis
   const allPowerballs = allWinningNumbers.map(numbers => numbers[numbers.length - 1]);
   const powerballCounts = countFrequencies(allPowerballs);
-  const powerball = selectPowerballByFrequency(powerballCounts, allWinningNumbers);
+  const powerball = selectPowerballByFrequency(powerballCounts);
   
   return { mainBalls, powerball };
 };
@@ -570,10 +570,9 @@ const selectPowerballByHotCold = (sortedHotPowerballs, coldPowerballCandidates, 
 /**
  * Select a Powerball number from frequency counts with fallbacks
  * @param {Object} powerballCounts - Object with Powerball numbers and their frequencies
- * @param {Array} allWinningNumbers - All historical winning numbers as fallback
  * @returns {number} Selected Powerball number
  */
-const selectPowerballByFrequency = (powerballCounts, allWinningNumbers) => {
+const selectPowerballByFrequency = (powerballCounts) => {
   const sortedPowerballs = getNumbersByFrequency(powerballCounts);
   const topPowerballs = sortedPowerballs.slice(0, 3); // Take top 3 most frequent
   return topPowerballs.length > 0 

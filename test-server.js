@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+/* eslint-env node */
+/* global process */
 
 /**
  * Unit tests for the Powerball API server

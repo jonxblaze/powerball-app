@@ -49,8 +49,8 @@ function App() {
         let result;
         try {
           result = await parsePowerballData();
-        } catch (apiError) {
-          console.log("API loading failed, falling back to local JSON...");
+        } catch (error) {
+          console.log("API loading failed, falling back to local JSON...", error.message);
           result = await loadFallbackData();
         }
         

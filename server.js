@@ -81,21 +81,14 @@ API_ROUTES.post('/update-powerball', (req, res) => {
   }
 
   // Respond immediately to avoid timeout
-  // Use try-catch around response to handle any connection issues
-  try {
-    res.json({
-      success: true,
-      message: 'Update initiated. This may take several minutes, but the operation is running in the background.',
-    });
-  } catch (responseError) {
-    // If we can't send the response, the connection might already be closed
-    // This is fine, as the purpose is to avoid blocking the client
-    console.log('Could not send response (connection may be closed), continuing with update');
-  }
+  res.json({
+    success: true,
+    message: 'Update initiated. This may take several minutes, but the operation is running in the background.',
+  });
 
-  // Use setImmediate to ensure operation runs in the next event loop cycle
-  // This is more reliable than process.nextTick in some hosting environments
-  setImmediate(() => {
+  // Use process.nextTick to ensure operation runs in the next event loop cycle
+  // This is available in Node.js and avoids the no-undef error
+  process.nextTick(() => {
     updateInProgress = true;
     
     // Run the update operation in a completely separate execution context
