@@ -38,13 +38,13 @@ export const generateSophisticatedNumbers = (allWinningNumbers, algorithmType = 
   if (result) {
     const generatedCombination = [...result.mainBalls, result.powerball].sort((a, b) => a - b);
     
-    // Convert historical combinations to sorted arrays for comparison
-    const historicalCombinations = allWinningNumbers.map(numbers => [...numbers].sort((a, b) => a - b));
-    
     // Check if the generated combination matches any historical combination
-    const isDuplicate = historicalCombinations.some(historical => 
-      JSON.stringify(historical) === JSON.stringify(generatedCombination)
-    );
+    const isDuplicate = allWinningNumbers.some(historical => {
+      const sortedHistorical = [...historical].sort((a, b) => a - b);
+      // Compare arrays element by element instead of using JSON.stringify for better performance
+      if (sortedHistorical.length !== generatedCombination.length) return false;
+      return sortedHistorical.every((val, idx) => val === generatedCombination[idx]);
+    });
     
     // If it's a duplicate, try again with more randomness (up to 10 times)
     if (isDuplicate) {
@@ -54,9 +54,12 @@ export const generateSophisticatedNumbers = (allWinningNumbers, algorithmType = 
         const newResult = generateByCombinedApproach(allWinningNumbers);
         const newCombination = [...newResult.mainBalls, newResult.powerball].sort((a, b) => a - b);
         
-        const isStillDuplicate = historicalCombinations.some(historical => 
-          JSON.stringify(historical) === JSON.stringify(newCombination)
-        );
+        const isStillDuplicate = allWinningNumbers.some(historical => {
+          const sortedHistorical = [...historical].sort((a, b) => a - b);
+          // Compare arrays element by element instead of using JSON.stringify for better performance
+          if (sortedHistorical.length !== newCombination.length) return false;
+          return sortedHistorical.every((val, idx) => val === newCombination[idx]);
+        });
         
         if (!isStillDuplicate) {
           return newResult;
@@ -257,23 +260,14 @@ const generateByHotCold = (allWinningNumbers) => {
   });
 
   // Find hot (most frequent in recent) and cold (least frequent in recent) numbers
-  const recentMainBallCounts = {};
-  const olderMainBallCounts = {};
-  
-  recentMainBalls.forEach(num => {
-    recentMainBallCounts[num] = (recentMainBallCounts[num] || 0) + 1;
-  });
-  
-  olderMainBalls.forEach(num => {
-    olderMainBallCounts[num] = (olderMainBallCounts[num] || 0) + 1;
-  });
+  const recentMainBallCounts = countFrequencies(recentMainBalls);
+  const olderMainBallCounts = countFrequencies(olderMainBalls);
 
   // Get all possible main balls (1-69)
   const allPossibleNumbers = Array.from({length: 69}, (_, i) => i + 1);
   
   // Identify hot numbers (frequently appearing in recent draws)
-  const sortedByRecentFreq = Object.entries(recentMainBallCounts)
-    .sort(([, countA], [, countB]) => countB - countA); // Most frequent first (hot)
+  const sortedByRecentFreq = getNumbersByFrequency(recentMainBallCounts);
   
   // Identify cold numbers (rarely appearing in recent draws but appearing in older draws)
   // First, get numbers that appeared in older draws but have low frequency in recent draws
@@ -287,8 +281,8 @@ const generateByHotCold = (allWinningNumbers) => {
   const hotMainBalls = [];
   for (let i = 0; i < 2 && topHotNumbers.length > 0; i++) {
     const randomIndex = Math.floor(Math.random() * Math.min(3, topHotNumbers.length)); // Pick from top 3 to add randomness
-    const [num] = topHotNumbers.splice(randomIndex, 1)[0];
-    hotMainBalls.push(Number(num));
+    const num = topHotNumbers[randomIndex];
+    hotMainBalls.push(num);
   }
   
   // Get cold numbers (least frequent in recent or not recent) and add randomness
@@ -315,21 +309,11 @@ const generateByHotCold = (allWinningNumbers) => {
   const mainBalls = combinedMainBalls.slice(0, 5).sort((a, b) => a - b);
 
   // For Powerball: do similar hot/cold analysis
-  const recentPowerballCounts = {};
-  const olderPowerballCounts = {};
-  
-  recentPowerballs.forEach(num => {
-    recentPowerballCounts[num] = (recentPowerballCounts[num] || 0) + 1;
-  });
-  
-  olderPowerballs.forEach(num => {
-    olderPowerballCounts[num] = (olderPowerballCounts[num] || 0) + 1;
-  });
+  const recentPowerballCounts = countFrequencies(recentPowerballs);
+  const olderPowerballCounts = countFrequencies(olderPowerballs);
   
   // Identify hot powerballs (frequently in recent draws)
-  const sortedHotPowerballs = Object.entries(recentPowerballCounts)
-    .sort(([, countA], [, countB]) => countB - countA)
-    .map(([num]) => Number(num));
+  const sortedHotPowerballs = getNumbersByFrequency(recentPowerballCounts);
   
   // Identify cold powerballs (in older draws but not recent)
   const coldPowerballCandidates = Object.keys(olderPowerballCounts)
@@ -337,27 +321,8 @@ const generateByHotCold = (allWinningNumbers) => {
     .map(Number)
     .filter(num => !recentPowerballCounts[num] || recentPowerballCounts[num] < 2);
     
-  // Choose either a hot or cold powerball
-  let powerball;
-  const useHotPowerball = Math.random() > 0.3; // 70% chance to use hot, 30% to use cold
-  
-  if (useHotPowerball && sortedHotPowerballs.length > 0) {
-    // Choose hot powerball (pick from top few to add randomness)
-    const topHotPowerballs = sortedHotPowerballs.slice(0, Math.min(5, sortedHotPowerballs.length));
-    powerball = topHotPowerballs[Math.floor(Math.random() * topHotPowerballs.length)];
-  } else if (coldPowerballCandidates.length > 0) {
-    // Choose cold powerball (from shuffled list to add randomness)
-    const shuffledColdPowerballs = [...coldPowerballCandidates].sort(() => Math.random() - 0.5);
-    powerball = shuffledColdPowerballs[0];
-  } else if (sortedHotPowerballs.length > 0) {
-    // Fallback to hot powerball if no cold ones available
-    const topHotPowerballs = sortedHotPowerballs.slice(0, Math.min(3, sortedHotPowerballs.length));
-    powerball = topHotPowerballs[Math.floor(Math.random() * topHotPowerballs.length)];
-  } else {
-    // Fallback to any powerball from the dataset
-    const allPowerballs = allWinningNumbers.map(numbers => numbers[numbers.length - 1]);
-    powerball = allPowerballs.length > 0 ? allPowerballs[Math.floor(Math.random() * allPowerballs.length)] : 1;
-  }
+  // Select Powerball using hot/cold analysis
+  const powerball = selectPowerballByHotCold(sortedHotPowerballs, coldPowerballCandidates, allWinningNumbers);
 
   return { mainBalls, powerball };
 };
@@ -366,25 +331,6 @@ const generateByHotCold = (allWinningNumbers) => {
  * Generates numbers based on balanced distribution
  */
 const generateByBalancedDistribution = (allWinningNumbers) => {
-  // Calculate how numbers are distributed across ranges historically
-  const rangeCounts = {
-    '1-14': 0,
-    '15-28': 0,
-    '29-42': 0,
-    '43-56': 0,
-    '57-69': 0
-  };
-  
-  allWinningNumbers.forEach(numbers => {
-    numbers.slice(0, 5).forEach(num => {
-      if (num >= 1 && num <= 14) rangeCounts['1-14']++;
-      else if (num >= 15 && num <= 28) rangeCounts['15-28']++;
-      else if (num >= 29 && num <= 42) rangeCounts['29-42']++;
-      else if (num >= 43 && num <= 56) rangeCounts['43-56']++;
-      else if (num >= 57 && num <= 69) rangeCounts['57-69']++;
-    });
-  });
-  
   // Select one number from each range (or as close to balanced as possible)
   const ranges = [
     { min: 1, max: 14 },
@@ -422,20 +368,10 @@ const generateByBalancedDistribution = (allWinningNumbers) => {
     }
   }
   
-  // For Powerball, use the most common number
+  // For Powerball, use frequency analysis
   const allPowerballs = allWinningNumbers.map(numbers => numbers[numbers.length - 1]);
-  const powerballCounts = {};
-  allPowerballs.forEach(num => {
-    powerballCounts[num] = (powerballCounts[num] || 0) + 1;
-  });
-  
-  const sortedPowerballs = Object.entries(powerballCounts)
-    .sort(([, countA], [, countB]) => countB - countA)
-    .map(([num]) => Number(num));
-  
-  // Add randomness by selecting from top few
-  const topPowerballs = sortedPowerballs.slice(0, 3); // Take top 3 most frequent
-  const powerball = topPowerballs[Math.floor(Math.random() * topPowerballs.length)];
+  const powerballCounts = countFrequencies(allPowerballs);
+  const powerball = selectPowerballByFrequency(powerballCounts, allWinningNumbers);
   
   return { mainBalls: uniqueMainBalls.slice(0, 5).sort((a, b) => a - b), powerball };
 };
@@ -525,20 +461,10 @@ const generateByPatterns = (allWinningNumbers) => {
   
   mainBalls.sort((a, b) => a - b);
   
-  // For Powerball, use frequency analysis as before
+  // For Powerball, use frequency analysis
   const allPowerballs = allWinningNumbers.map(numbers => numbers[numbers.length - 1]);
-  const powerballCounts = {};
-  allPowerballs.forEach(num => {
-    powerballCounts[num] = (powerballCounts[num] || 0) + 1;
-  });
-  
-  const sortedPowerballs = Object.entries(powerballCounts)
-    .sort(([, countA], [, countB]) => countB - countA)
-    .map(([num]) => Number(num));
-  
-  // Add randomness by selecting from top few
-  const topPowerballs = sortedPowerballs.slice(0, 3); // Take top 3 most frequent
-  const powerball = topPowerballs[Math.floor(Math.random() * topPowerballs.length)];
+  const powerballCounts = countFrequencies(allPowerballs);
+  const powerball = selectPowerballByFrequency(powerballCounts, allWinningNumbers);
   
   return { mainBalls, powerball };
 };
@@ -599,7 +525,7 @@ const generateUniqueNumbersWithStats = (mean, median, count, range = {min: 1, ma
     // Ensure it's within valid range
     num = Math.max(range.min, Math.min(range.max, num));
     
-    // Ensure uniqueness
+    // Ensure uniqueness - optimized approach to avoid repeated includes() checks
     let attempts = 0;
     while (numbers.includes(num) && attempts < 10) { // Limit attempts to avoid infinite loops
       num = Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
@@ -609,6 +535,50 @@ const generateUniqueNumbersWithStats = (mean, median, count, range = {min: 1, ma
     numbers.push(num);
   }
   return numbers;
+};
+
+/**
+ * Select Powerball using hot/cold analysis
+ * @param {number[]} sortedHotPowerballs - Hot Powerballs sorted by frequency
+ * @param {number[]} coldPowerballCandidates - Cold Powerball candidates
+ * @param {Array} allWinningNumbers - All historical winning numbers
+ * @returns {number} Selected Powerball number
+ */
+const selectPowerballByHotCold = (sortedHotPowerballs, coldPowerballCandidates, allWinningNumbers) => {
+  // Choose either a hot or cold powerball
+  const useHotPowerball = Math.random() > 0.3; // 70% chance to use hot, 30% to use cold
+  
+  if (useHotPowerball && sortedHotPowerballs.length > 0) {
+    // Choose hot powerball (pick from top few to add randomness)
+    const topHotPowerballs = sortedHotPowerballs.slice(0, Math.min(5, sortedHotPowerballs.length));
+    return topHotPowerballs[Math.floor(Math.random() * topHotPowerballs.length)];
+  } else if (coldPowerballCandidates.length > 0) {
+    // Choose cold powerball (from shuffled list to add randomness)
+    const shuffledColdPowerballs = [...coldPowerballCandidates].sort(() => Math.random() - 0.5);
+    return shuffledColdPowerballs[0];
+  } else if (sortedHotPowerballs.length > 0) {
+    // Fallback to hot powerball if no cold ones available
+    const topHotPowerballs = sortedHotPowerballs.slice(0, Math.min(3, sortedHotPowerballs.length));
+    return topHotPowerballs[Math.floor(Math.random() * topHotPowerballs.length)];
+  } else {
+    // Fallback to any powerball from the dataset
+    const allPowerballs = allWinningNumbers.map(numbers => numbers[numbers.length - 1]);
+    return allPowerballs.length > 0 ? allPowerballs[Math.floor(Math.random() * allPowerballs.length)] : Math.floor(Math.random() * 26) + 1;
+  }
+};
+
+/**
+ * Select a Powerball number from frequency counts with fallbacks
+ * @param {Object} powerballCounts - Object with Powerball numbers and their frequencies
+ * @param {Array} allWinningNumbers - All historical winning numbers as fallback
+ * @returns {number} Selected Powerball number
+ */
+const selectPowerballByFrequency = (powerballCounts, allWinningNumbers) => {
+  const sortedPowerballs = getNumbersByFrequency(powerballCounts);
+  const topPowerballs = sortedPowerballs.slice(0, 3); // Take top 3 most frequent
+  return topPowerballs.length > 0 
+    ? topPowerballs[Math.floor(Math.random() * topPowerballs.length)] 
+    : Math.floor(Math.random() * 26) + 1; // Fallback: random Powerball
 };
 
 /**
@@ -658,7 +628,10 @@ const generateByCombinedApproach = (allWinningNumbers) => {
   // Remove duplicates and ensure 5 unique numbers
   const uniqueMainBalls = [...new Set(allMainBalls)];
   while (uniqueMainBalls.length < 5) {
-    uniqueMainBalls.push(Math.floor(Math.random() * 69) + 1);
+    const randomNum = Math.floor(Math.random() * 69) + 1;
+    if (!uniqueMainBalls.includes(randomNum)) {
+      uniqueMainBalls.push(randomNum);
+    }
   }
   
   // For Powerball, we'll take the most common one from the results
