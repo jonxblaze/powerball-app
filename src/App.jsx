@@ -12,129 +12,111 @@ function App() {
   const [algorithmDescription, setAlgorithmDescription] = useState('Select an algorithm to see its description.');
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        // Only update from API on configured days of week
-        // Default to Monday(1), Wednesday(3), Saturday(6). Override via VITE_UPDATE_DAYS (comma-separated numbers 0-6)
-        const allowedDaysEnv = import.meta.env.VITE_UPDATE_DAYS || '1,3,6';
-        const allowedDays = allowedDaysEnv.split(',').map((d) => Number(d.trim())).filter((n) => !Number.isNaN(n));
-        const todayDow = new Date().getDay();
+    const shouldUpdate = () => {
+      const allowedDaysEnv = import.meta.env.VITE_UPDATE_DAYS || '1,3,6';
+      const allowedDays = allowedDaysEnv.split(',').map((d) => Number(d.trim())).filter((n) => !Number.isNaN(n));
+      const todayDow = new Date().getDay();
+      return allowedDays.includes(todayDow);
+    };
 
-        if (allowedDays.includes(todayDow)) {
-          console.log("Attempting to update Powerball data (allowed day)...");
-          try {
-            await updatePowerballData();
-            console.log("Powerball data updated successfully");
-          } catch (updateError) {
-            // Check if this looks like a timeout or network issue
-            const isTimeoutError = updateError.message.includes('500') || 
-                                 updateError.message.includes('timeout') || 
-                                 updateError.message.includes('network') ||
-                                 updateError.message.includes('Failed to fetch');
-            
-            if (isTimeoutError) {
-              console.log("Update initiated but network request timed out (this is expected for long-running operations), continuing with existing data.");
-            } else {
-              console.log("Update failed (may be blocked by source), continuing with existing data:", updateError.message);
-            }
-            // Don't fail the entire load - continue with existing data
+    const loadData = async () => {
+      // Handle the update attempt
+      if (shouldUpdate()) {
+        console.log("Attempting to update Powerball data (allowed day)...");
+        try {
+          await updatePowerballData();
+          console.log("Powerball data updated successfully");
+        } catch (updateError) {
+          // Check if this looks like a timeout or network issue
+          const isTimeoutError = updateError.message.includes('500') || 
+                               updateError.message.includes('timeout') || 
+                               updateError.message.includes('network') ||
+                               updateError.message.includes('Failed to fetch');
+          
+          if (isTimeoutError) {
+            console.log("Update initiated but network request timed out (this is expected for long-running operations), continuing with existing data.");
+          } else {
+            console.log("Update failed (may be blocked by source), continuing with existing data:", updateError.message);
           }
-        } else {
-          console.log("Skipping updatePowerballData: today is not an allowed update day");
+          // Don't fail the entire load - continue with existing data
+        }
+      } else {
+        console.log("Skipping updatePowerballData: today is not an allowed update day");
+      }
+      
+      try {
+        // Load data from API with fallback
+        let result;
+        try {
+          result = await parsePowerballData();
+        } catch (apiError) {
+          console.log("API loading failed, falling back to local JSON...");
+          result = await loadFallbackData();
         }
         
-        // Then load the updated data
-        const result = await parsePowerballData();
-        setAllWinningNumbers(result.winningNumbers);
-        setOriginalData(result.sortedData); // Store the original sorted data to access DrawDate
-        
-        // Set the most recent winning numbers by default
-        if (result.sortedData.length > 0) {
-          const mostRecentEntry = result.sortedData[0]; // First entry is the most recent due to sorting
-          if (mostRecentEntry && mostRecentEntry.WinningNumbers) {
-            const numbers = [];
-            // Extract numbers 0-5 from the WinningNumbers object
-            for (let i = 0; i <= 5; i++) {
-              if (mostRecentEntry.WinningNumbers[i]) {
-                numbers.push(parseInt(mostRecentEntry.WinningNumbers[i].Number));
-              }
-            }
-            if (numbers.length === 6) { // Ensure we have exactly 6 numbers (5 main + 1 Powerball)
-              const mainBalls = numbers.slice(0, 5).sort((a, b) => a - b);
-              const powerball = numbers[5]; // The 6th number (index 5) is the Powerball
-              setRecentNumbers({ mainBalls, powerball });
-            }
-          }
-        }
-        
-        // Set initial algorithm description
+        processAndSetData(result);
         setAlgorithmDescription('Select an algorithm to see its description.');
         setLoading(false);
       } catch (err) {
         console.error("Error during data loading:", err);
-        
-        // If the API call fails, try to load from the local JSON file directly
-        try {
-          console.log("API loading failed, falling back to local JSON...");
-          // Fetch the local JSON file from public directory
-          const response = await fetch('/powerball_results.json');
-          if (!response.ok) throw new Error('Local JSON fetch failed');
-          const data = await response.json();
-          
-          // Sort the data by DrawDate to ensure chronological order, with most recent first
-          const sortedData = data.sort((a, b) => {
-            const dateA = new Date(a.DrawDate);
-            const dateB = new Date(b.DrawDate);
-            return dateB - dateA; // Sort in descending order (most recent first)
-          });
-          
-          // Transform the sorted JSON data to the format expected by the algorithms
-          const winningNumbers = sortedData.map(entry => {
-            const numbers = [];
-            
-            // Extract numbers 0-5 from the WinningNumbers object
-            for (let i = 0; i <= 5; i++) {
-              if (entry.WinningNumbers && entry.WinningNumbers[i]) {
-                numbers.push(parseInt(entry.WinningNumbers[i].Number));
-              }
-            }
-            
-            return numbers;
-          }).filter(numbers => numbers.length === 6); // Ensure we have exactly 6 numbers (5 main + 1 Powerball)
-          
-          setAllWinningNumbers(winningNumbers);
-          setOriginalData(sortedData);
-          
-          // Set the most recent winning numbers by default
-          if (sortedData.length > 0) {
-            const mostRecentEntry = sortedData[0]; // First entry is the most recent due to sorting
-            if (mostRecentEntry && mostRecentEntry.WinningNumbers) {
-              const numbers = [];
-              // Extract numbers 0-5 from the WinningNumbers object
-              for (let i = 0; i <= 5; i++) {
-                if (mostRecentEntry.WinningNumbers[i]) {
-                  numbers.push(parseInt(mostRecentEntry.WinningNumbers[i].Number));
-                }
-              }
-              if (numbers.length === 6) { // Ensure we have exactly 6 numbers (5 main + 1 Powerball)
-                const mainBalls = numbers.slice(0, 5).sort((a, b) => a - b);
-                const powerball = numbers[5]; // The 6th number (index 5) is the Powerball
-                setRecentNumbers({ mainBalls, powerball });
-              }
+        setError('Failed to load Powerball data. The backend server may not be running.');
+        setLoading(false);
+      }
+    };
+
+    const loadFallbackData = async () => {
+      const response = await fetch('/powerball_results.json');
+      if (!response.ok) throw new Error('Local JSON fetch failed');
+      const data = await response.json();
+      
+      // Sort the data by DrawDate to ensure chronological order, with most recent first
+      const sortedData = data.sort((a, b) => {
+        const dateA = new Date(a.DrawDate);
+        const dateB = new Date(b.DrawDate);
+        return dateB - dateA; // Sort in descending order (most recent first)
+      });
+      
+      // Transform the sorted JSON data to the format expected by the algorithms
+      const winningNumbers = sortedData
+        .map(entry => {
+          const numbers = [];
+          // Extract numbers 0-5 from the WinningNumbers object (0-4 are main balls, 5 is Powerball)
+          for (let i = 0; i <= 5; i++) {
+            if (entry.WinningNumbers && entry.WinningNumbers[i]) {
+              numbers.push(parseInt(entry.WinningNumbers[i].Number));
             }
           }
-          
-          // Set initial algorithm description
-          setAlgorithmDescription('Select an algorithm to see its description.');
-          setLoading(false);
-        } catch (fallbackError) {
-          // If all attempts fail, show an error
-          setError('Failed to load Powerball data. The backend server may not be running.');
-          setLoading(false);
-          console.error("Fallback loading also failed:", fallbackError);
+          return numbers;
+        })
+        .filter(numbers => numbers.length === 6); // Ensure we have exactly 6 numbers (5 main + 1 Powerball)
+      
+      return { winningNumbers, sortedData };
+    };
+
+    const processAndSetData = (result) => {
+      setAllWinningNumbers(result.winningNumbers);
+      setOriginalData(result.sortedData); // Store the original sorted data to access DrawDate
+      
+      // Set the most recent winning numbers by default
+      if (result.sortedData.length > 0) {
+        const mostRecentEntry = result.sortedData[0]; // First entry is the most recent due to sorting
+        if (mostRecentEntry && mostRecentEntry.WinningNumbers) {
+          const numbers = [];
+          // Extract numbers 0-5 from the WinningNumbers object (0-4 are main balls, 5 is Powerball)
+          for (let i = 0; i <= 5; i++) {
+            if (mostRecentEntry.WinningNumbers[i]) {
+              numbers.push(parseInt(mostRecentEntry.WinningNumbers[i].Number));
+            }
+          }
+          if (numbers.length === 6) { // Ensure we have exactly 6 numbers (5 main + 1 Powerball)
+            const mainBalls = numbers.slice(0, 5).sort((a, b) => a - b);
+            const powerball = numbers[5]; // The 6th number (index 5) is the Powerball
+            setRecentNumbers({ mainBalls, powerball });
+          }
         }
       }
     };
+
     loadData();
   }, []);
 

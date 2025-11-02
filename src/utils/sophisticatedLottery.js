@@ -73,6 +73,22 @@ export const generateSophisticatedNumbers = (allWinningNumbers, algorithmType = 
 };
 
 /**
+ * Extracts numbers from a Powerball result entry
+ * @param {Object} entry - A Powerball result entry
+ * @returns {Array} Array of 6 numbers (5 main balls + 1 Powerball)
+ */
+const extractNumbersFromEntry = (entry) => {
+  const numbers = [];
+  // Extract numbers 0-5 from the WinningNumbers object (0-4 are main balls, 5 is Powerball)
+  for (let i = 0; i <= 5; i++) {
+    if (entry.WinningNumbers && entry.WinningNumbers[i]) {
+      numbers.push(parseInt(entry.WinningNumbers[i].Number));
+    }
+  }
+  return numbers;
+};
+
+/**
  * Fetches and parses the Powerball results from the API endpoint
  * @returns {Promise<Object>} Object with winningNumbers array and sorted original data
  */
@@ -97,19 +113,9 @@ export const parsePowerballData = async () => {
     });
     
     // Transform the sorted JSON data to the format expected by the algorithms
-    // Each entry has WinningNumbers with keys 0-5, where 0-4 are main balls and 5 is Powerball
-    const winningNumbers = sortedData.map(entry => {
-      const numbers = [];
-      
-      // Extract numbers 0-5 from the WinningNumbers object
-      for (let i = 0; i <= 5; i++) {
-        if (entry.WinningNumbers && entry.WinningNumbers[i]) {
-          numbers.push(parseInt(entry.WinningNumbers[i].Number));
-        }
-      }
-      
-      return numbers;
-    }).filter(numbers => numbers.length === 6); // Ensure we have exactly 6 numbers (5 main + 1 Powerball)
+    const winningNumbers = sortedData
+      .map(extractNumbersFromEntry)
+      .filter(numbers => numbers.length === 6); // Ensure we have exactly 6 numbers (5 main + 1 Powerball)
     
     return { winningNumbers, sortedData };
   } catch (error) {
@@ -180,36 +186,50 @@ const generateByFrequency = (allWinningNumbers) => {
     allPowerballs.push(powerball);
   });
 
-  // Calculate frequency for main balls
-  const mainBallCounts = {};
-  allMainBalls.forEach(num => {
-    mainBallCounts[num] = (mainBallCounts[num] || 0) + 1;
-  });
-
-  // Calculate frequency for Powerball
-  const powerballCounts = {};
-  allPowerballs.forEach(num => {
-    powerballCounts[num] = (powerballCounts[num] || 0) + 1;
-  });
+  // Calculate frequency for main balls and powerballs
+  const mainBallCounts = countFrequencies(allMainBalls);
+  const powerballCounts = countFrequencies(allPowerballs);
 
   // Sort by frequency and pick top 5 for main balls
-  const sortedMainBalls = Object.entries(mainBallCounts)
-    .sort(([, countA], [, countB]) => countB - countA)
-    .map(([num]) => Number(num));
+  const sortedMainBalls = getNumbersByFrequency(mainBallCounts);
   
-  // Sort by frequency for Powerball
-  const sortedPowerballs = Object.entries(powerballCounts)
-    .sort(([, countA], [, countB]) => countB - countA)
-    .map(([num]) => Number(num));
+  // Sort by frequency for Powerball and pick from top
+  const sortedPowerballs = getNumbersByFrequency(powerballCounts);
 
   // Ensure we have unique numbers for main balls (avoid duplicates)
   const mainBalls = sortedMainBalls.slice(0, 5).sort((a, b) => a - b);
   
   // Pick from among the top few most frequent Powerballs to add some variation
   const topPowerballs = sortedPowerballs.slice(0, 3); // Take top 3 most frequent
-  const powerball = topPowerballs[Math.floor(Math.random() * topPowerballs.length)];
+  const powerball = topPowerballs.length > 0 
+    ? topPowerballs[Math.floor(Math.random() * topPowerballs.length)] 
+    : Math.floor(Math.random() * 26) + 1; // Fallback: random Powerball
 
   return { mainBalls, powerball };
+};
+
+/**
+ * Count frequency of numbers in an array
+ * @param {number[]} numbers - Array of numbers to count
+ * @returns {Object} Object with number as key and count as value
+ */
+const countFrequencies = (numbers) => {
+  const counts = {};
+  numbers.forEach(num => {
+    counts[num] = (counts[num] || 0) + 1;
+  });
+  return counts;
+};
+
+/**
+ * Get numbers sorted by frequency (highest first)
+ * @param {Object} counts - Object with number as key and frequency as value
+ * @returns {number[]} Array of numbers sorted by frequency (descending)
+ */
+const getNumbersByFrequency = (counts) => {
+  return Object.entries(counts)
+    .sort(([, countA], [, countB]) => countB - countA)
+    .map(([num]) => Number(num));
 };
 
 /**
@@ -531,7 +551,7 @@ const generateByStatisticalAnalysis = (allWinningNumbers) => {
   const allMainBalls = allWinningNumbers.flatMap(numbers => numbers.slice(0, 5));
   const allPowerballs = allWinningNumbers.map(numbers => numbers[numbers.length - 1]);
   
-  // Calculate mean, median, std deviation for main balls
+  // Calculate mean, median for main balls
   const meanMain = allMainBalls.reduce((a, b) => a + b, 0) / allMainBalls.length;
   const sortedMain = [...allMainBalls].sort((a, b) => a - b);
   const medianMain = sortedMain[Math.floor(sortedMain.length / 2)];
@@ -539,46 +559,56 @@ const generateByStatisticalAnalysis = (allWinningNumbers) => {
   // Calculate mean for Powerball
   const meanPowerball = allPowerballs.reduce((a, b) => a + b, 0) / allPowerballs.length;
   
-  // Generate numbers around statistical measures
-  const mainBalls = [];
-  for (let i = 0; i < 5; i++) {
-    // Select numbers using both mean and median with variation
-    const positionFactor = i / 4; // 0 to 1 for distribution across range
-    let num = Math.round(meanMain * (1 - positionFactor) + medianMain * positionFactor + (Math.random() - 0.5) * 10); // Add random variation
-    
-    // Ensure it's within valid range
-    num = Math.max(1, Math.min(69, num));
-    
-    // Ensure uniqueness
-    while (mainBalls.includes(num)) {
-      num = Math.floor(Math.random() * 69) + 1;
-    }
-    
-    mainBalls.push(num);
-  }
+  // Generate numbers around statistical measures with uniqueness
+  const mainBalls = generateUniqueNumbersWithStats(meanMain, medianMain, 5);
   
   // For Powerball, use the calculated mean with some random variation
   let powerball = Math.round(meanPowerball + (Math.random() - 0.5) * 5); // Add some variation
   if (isNaN(powerball) || powerball < 1) {
     // Fallback to most frequent if mean calculation fails
-    const powerballCounts = {};
-    allPowerballs.forEach(num => {
-      powerballCounts[num] = (powerballCounts[num] || 0) + 1;
-    });
-    
-    const sortedPowerballs = Object.entries(powerballCounts)
-      .sort(([, countA], [, countB]) => countB - countA)
-      .map(([num]) => Number(num));
+    const powerballCounts = countFrequencies(allPowerballs);
+    const sortedPowerballs = getNumbersByFrequency(powerballCounts);
     
     // Add randomness by selecting from top few
     const topPowerballs = sortedPowerballs.slice(0, 3); // Take top 3 most frequent
-    powerball = topPowerballs[Math.floor(Math.random() * topPowerballs.length)];
+    powerball = topPowerballs.length > 0 
+      ? topPowerballs[Math.floor(Math.random() * topPowerballs.length)] 
+      : Math.floor(Math.random() * 26) + 1; // Fallback: random Powerball
   }
   
   // Ensure powerball is in valid range (1-26 for Powerball)
   powerball = Math.max(1, Math.min(26, powerball));
   
   return { mainBalls: mainBalls.sort((a, b) => a - b), powerball };
+};
+
+/**
+ * Generate unique numbers based on statistical measures
+ * @param {number} mean - Mean value
+ * @param {number} median - Median value
+ * @param {number} count - Number of values to generate
+ * @returns {number[]} Array of unique numbers
+ */
+const generateUniqueNumbersWithStats = (mean, median, count, range = {min: 1, max: 69}) => {
+  const numbers = [];
+  for (let i = 0; i < count; i++) {
+    // Select numbers using both mean and median with variation
+    const positionFactor = count > 1 ? i / (count - 1) : 0.5; // 0 to 1 for distribution across range
+    let num = Math.round(mean * (1 - positionFactor) + median * positionFactor + (Math.random() - 0.5) * 10); // Add random variation
+    
+    // Ensure it's within valid range
+    num = Math.max(range.min, Math.min(range.max, num));
+    
+    // Ensure uniqueness
+    let attempts = 0;
+    while (numbers.includes(num) && attempts < 10) { // Limit attempts to avoid infinite loops
+      num = Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
+      attempts++;
+    }
+    
+    numbers.push(num);
+  }
+  return numbers;
 };
 
 /**
