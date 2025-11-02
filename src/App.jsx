@@ -22,8 +22,23 @@ function App() {
 
         if (allowedDays.includes(todayDow)) {
           console.log("Attempting to update Powerball data (allowed day)...");
-          await updatePowerballData();
-          console.log("Powerball data updated successfully");
+          try {
+            await updatePowerballData();
+            console.log("Powerball data updated successfully");
+          } catch (updateError) {
+            // Check if this looks like a timeout or network issue
+            const isTimeoutError = updateError.message.includes('500') || 
+                                 updateError.message.includes('timeout') || 
+                                 updateError.message.includes('network') ||
+                                 updateError.message.includes('Failed to fetch');
+            
+            if (isTimeoutError) {
+              console.log("Update initiated but network request timed out (this is expected for long-running operations), continuing with existing data.");
+            } else {
+              console.log("Update failed (may be blocked by source), continuing with existing data:", updateError.message);
+            }
+            // Don't fail the entire load - continue with existing data
+          }
         } else {
           console.log("Skipping updatePowerballData: today is not an allowed update day");
         }

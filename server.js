@@ -69,44 +69,75 @@ async function fetchResults(gameId, page, size = 20) {
   }
 }
 
-// ✅ Endpoint: Update Powerball data
-API_ROUTES.post('/update-powerball', async (req, res) => {
-  try {
-    const gameId = GAMES.POWERBALL;
-    let allDraws = [];
-    let page = 1;
+// ✅ Endpoint: Update Powerball data (initiates async update)
+let updateInProgress = false;
 
-    console.log('Fetching Powerball results...');
-
-    while (true) {
-      const data = await fetchResults(gameId, page);
-      const draws = data?.PreviousDraws ?? [];
-      if (draws.length === 0) break;
-
-      allDraws = allDraws.concat(draws);
-      console.log(`Fetched page ${page} (${draws.length} draws)`);
-      page++;
-      await new Promise((r) => setTimeout(r, 500));
-    }
-
-    // Use absolute path - public folder is in the same directory as server.js
-    const filePath = path.join(process.cwd(), 'public', 'powerball_results.json');
-    fs.writeFileSync(filePath, JSON.stringify(allDraws, null, 2), 'utf8');
-    console.log(`✅ Saved ${allDraws.length} Powerball results to ${filePath}`);
-
-    res.json({
-      success: true,
-      message: `Updated ${allDraws.length} Powerball results.`,
-      count: allDraws.length,
-    });
-  } catch (error) {
-    console.error('Error updating Powerball data:', error);
-    res.status(500).json({
+API_ROUTES.post('/update-powerball', (req, res) => {
+  if (updateInProgress) {
+    return res.status(409).json({
       success: false,
-      message: 'Error updating Powerball data',
-      error: error.message,
+      message: 'Update operation already in progress. Please wait.',
     });
   }
+
+  // Respond immediately to avoid timeout
+  // Use try-catch around response to handle any connection issues
+  try {
+    res.json({
+      success: true,
+      message: 'Update initiated. This may take several minutes, but the operation is running in the background.',
+    });
+  } catch (responseError) {
+    // If we can't send the response, the connection might already be closed
+    // This is fine, as the purpose is to avoid blocking the client
+    console.log('Could not send response (connection may be closed), continuing with update');
+  }
+
+  // Use setImmediate to ensure operation runs in the next event loop cycle
+  // This is more reliable than process.nextTick in some hosting environments
+  setImmediate(() => {
+    updateInProgress = true;
+    
+    // Run the update operation in a completely separate execution context
+    const updateOperation = async () => {
+      try {
+        const gameId = GAMES.POWERBALL;
+        let allDraws = [];
+        let page = 1;
+
+        console.log('Fetching Powerball results...');
+
+        while (true) {
+          const data = await fetchResults(gameId, page);
+          const draws = data?.PreviousDraws ?? [];
+          if (draws.length === 0) break;
+
+          allDraws = allDraws.concat(draws);
+          console.log(`Fetched page ${page} (${draws.length} draws)`);
+          page++;
+          // Reduce delay slightly for faster updates (but don't overwhelm the API)
+          await new Promise((r) => setTimeout(r, 200));
+        }
+
+        // Use absolute path - public folder is in the same directory as server.js
+        const filePath = path.join(process.cwd(), 'public', 'powerball_results.json');
+        fs.writeFileSync(filePath, JSON.stringify(allDraws, null, 2), 'utf8');
+        console.log(`✅ Saved ${allDraws.length} Powerball results to ${filePath}`);
+
+        console.log(`✅ Update completed. Fetched ${allDraws.length} Powerball results.`);
+      } catch (error) {
+        console.error('Error during background update of Powerball data:', error.message);
+      } finally {
+        updateInProgress = false;
+      }
+    };
+
+    // Execute the update operation in a way that won't crash the server
+    updateOperation().catch(error => {
+      console.error('Uncaught error in background update:', error);
+      updateInProgress = false;
+    });
+  });
 });
 
 // ✅ Endpoint: Serve stored Powerball data
@@ -135,6 +166,7 @@ API_ROUTES.get('/powerball-status', (req, res) => {
     res.json({
       success: true,
       lastUpdated: stats.mtime,
+      updateInProgress: updateInProgress,
       message: 'Powerball results file accessible',
     });
   } catch (error) {
@@ -144,6 +176,17 @@ API_ROUTES.get('/powerball-status', (req, res) => {
       error: error.message,
     });
   }
+});
+
+// ✅ Endpoint: Check update status
+API_ROUTES.get('/update-status', (req, res) => {
+  res.json({
+    success: true,
+    updateInProgress: updateInProgress,
+    message: updateInProgress 
+      ? 'Update is currently in progress' 
+      : 'No update operations running',
+  });
 });
 
 // Mount API routes at both /api and /app/api for deployment flexibility
