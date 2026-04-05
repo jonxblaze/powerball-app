@@ -1,10 +1,10 @@
 /* eslint-env node */
 /* global process */
 import express from 'express';
-import fs from 'fs';
-import fetch from 'node-fetch';
+import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import cron from 'node-cron';
 
 // ✅ ESM-safe __dirname and __filename
 const __filename = fileURLToPath(import.meta.url);
@@ -12,6 +12,108 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 5001;
+const DATA_FILE_PATH = path.join(process.cwd(), 'public', 'powerball_results.json');
+const UPDATE_LOCK_FILE_PATH = path.join(process.cwd(), 'public', '.powerball_update.lock');
+const UPDATE_LOCK_STALE_MS = 30 * 60 * 1000;
+
+import { fetchAllDraws, GAMES } from './src/utils/powerballApi.node.js';
+
+let updateInProgress = false;
+
+async function acquireUpdateLock() {
+  if (updateInProgress) {
+    return { acquired: false, reason: 'in-progress' };
+  }
+
+  const nowIso = new Date().toISOString();
+  try {
+    const lockHandle = await fs.open(UPDATE_LOCK_FILE_PATH, 'wx');
+    await lockHandle.writeFile(nowIso, 'utf8');
+    await lockHandle.close();
+    return { acquired: true };
+  } catch (error) {
+    if (error?.code !== 'EEXIST') {
+      throw error;
+    }
+
+    // Existing lock: clear stale lock and retry once.
+    try {
+      const stats = await fs.stat(UPDATE_LOCK_FILE_PATH);
+      const ageMs = Date.now() - stats.mtimeMs;
+      if (ageMs > UPDATE_LOCK_STALE_MS) {
+        console.warn('[LOCK] Removing stale Powerball update lock.');
+        await fs.unlink(UPDATE_LOCK_FILE_PATH);
+
+        const retryHandle = await fs.open(UPDATE_LOCK_FILE_PATH, 'wx');
+        await retryHandle.writeFile(nowIso, 'utf8');
+        await retryHandle.close();
+        return { acquired: true };
+      }
+    } catch (statOrUnlinkError) {
+      if (statOrUnlinkError?.code !== 'ENOENT') {
+        throw statOrUnlinkError;
+      }
+      // Lock was removed by another process between checks.
+      const retryHandle = await fs.open(UPDATE_LOCK_FILE_PATH, 'wx');
+      await retryHandle.writeFile(nowIso, 'utf8');
+      await retryHandle.close();
+      return { acquired: true };
+    }
+
+    return { acquired: false, reason: 'lock-exists' };
+  }
+}
+
+async function releaseUpdateLock() {
+  try {
+    await fs.unlink(UPDATE_LOCK_FILE_PATH);
+  } catch (error) {
+    if (error?.code !== 'ENOENT') {
+      console.error('[LOCK] Failed to release update lock:', error);
+    }
+  }
+}
+
+async function startPowerballUpdateInBackground(trigger = 'manual') {
+  const lock = await acquireUpdateLock();
+  if (!lock.acquired) {
+    return { started: false, reason: lock.reason };
+  }
+
+  updateInProgress = true;
+  void (async () => {
+    try {
+      const allDraws = await fetchAllDraws(GAMES.POWERBALL);
+      await fs.writeFile(DATA_FILE_PATH, JSON.stringify(allDraws, null, 2), 'utf8');
+      console.log(`[${trigger}] ✅ Saved ${allDraws.length} Powerball results to ${DATA_FILE_PATH}`);
+      console.log(`[${trigger}] ✅ Update completed. Fetched ${allDraws.length} Powerball results.`);
+    } catch (error) {
+      console.error(`[${trigger}] Error during Powerball update:`, error);
+    } finally {
+      updateInProgress = false;
+      await releaseUpdateLock();
+    }
+  })();
+
+  return { started: true };
+}
+
+// --- SCHEDULED POWERBALL DATA UPDATE ---
+// Powerball drawings: Mon, Wed, Sat at 7:59 PM Pacific Time
+// Schedule fetch for 8:05 PM PT (to allow for result processing)
+cron.schedule('5 20 * * 1,3,6', async () => {
+  console.log('[CRON] Triggering scheduled Powerball data update after drawing...');
+  try {
+    const result = await startPowerballUpdateInBackground('CRON');
+    if (!result.started) {
+      console.log('[CRON] Update already in progress, skipping scheduled update.');
+    }
+  } catch (err) {
+    console.error('[CRON] Failed to trigger scheduled update:', err);
+  }
+}, {
+  timezone: 'America/Los_Angeles'
+});
 
 // ✅ CORS middleware
 app.use((req, res, next) => {
@@ -27,125 +129,35 @@ app.use(express.json());
 // Support both /api and /app/api paths for deployment flexibility
 const API_ROUTES = express.Router();
 
-const BASE_URL =
-  'https://www.calottery.com/api/DrawGameApi/DrawGamePastDrawResults/{game}/{page}/{size}';
-const GAMES = {
-  POWERBALL: 12,
-  'MEGA Millions': 15,
-  'SuperLotto Plus': 8,
-};
-
-async function fetchResults(gameId, page, size = 20) {
-  const url = BASE_URL
-    .replace('{game}', gameId)
-    .replace('{page}', page)
-    .replace('{size}', size);
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
-
+API_ROUTES.post('/update-powerball', async (req, res) => {
   try {
-    const res = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'User-Agent': 'Mozilla/5.0',
-        Accept: 'application/json',
-        Referer: 'https://www.calottery.com/',
-        Origin: 'https://www.calottery.com',
-      },
-      signal: controller.signal,
-    });
+    const result = await startPowerballUpdateInBackground('API');
+    if (!result.started) {
+      return res.status(409).json({
+        success: false,
+        message: 'Update operation already in progress. Please wait.',
+      });
+    }
 
-    clearTimeout(timeoutId);
-
-    if (!res.ok)
-      throw new Error(`Request failed: ${res.status} ${res.statusText}`);
-
-    return await res.json();
-  } catch (error) {
-    clearTimeout(timeoutId);
-    if (error.name === 'AbortError') throw new Error('Request timeout');
-    throw error;
-  }
-}
-
-// ✅ Endpoint: Update Powerball data (initiates async update)
-let updateInProgress = false;
-
-API_ROUTES.post('/update-powerball', (req, res) => {
-  if (updateInProgress) {
-    return res.status(409).json({
-      success: false,
-      message: 'Update operation already in progress. Please wait.',
-    });
-  }
-
-  // Respond immediately to avoid timeout
-  // Use try-catch around response to handle any connection issues
-  try {
-    res.json({
+    return res.json({
       success: true,
       message: 'Update initiated. This may take several minutes, but the operation is running in the background.',
     });
-  } catch (responseError) {
-    // If we can't send the response, the connection might already be closed
-    // This is fine, as the purpose is to avoid blocking the client
-    console.log('Could not send response (connection may be closed), continuing with update');
-  }
-
-  // Use setImmediate to ensure operation runs in the next event loop cycle
-  // This is more reliable than process.nextTick in some hosting environments
-  setImmediate(() => {
-    updateInProgress = true;
-    
-    // Run the update operation in a completely separate execution context
-    const updateOperation = async () => {
-      try {
-        const gameId = GAMES.POWERBALL;
-        let allDraws = [];
-        let page = 1;
-
-        console.log('Fetching Powerball results...');
-
-        while (true) {
-          const data = await fetchResults(gameId, page);
-          const draws = data?.PreviousDraws ?? [];
-          if (draws.length === 0) break;
-
-          allDraws = allDraws.concat(draws);
-          console.log(`Fetched page ${page} (${draws.length} draws)`);
-          page++;
-          // Reduce delay slightly for faster updates (but don't overwhelm the API)
-          await new Promise((r) => setTimeout(r, 200));
-        }
-
-        // Use absolute path - public folder is in the same directory as server.js
-        const filePath = path.join(process.cwd(), 'public', 'powerball_results.json');
-        fs.writeFileSync(filePath, JSON.stringify(allDraws, null, 2), 'utf8');
-        console.log(`✅ Saved ${allDraws.length} Powerball results to ${filePath}`);
-
-        console.log(`✅ Update completed. Fetched ${allDraws.length} Powerball results.`);
-      } catch (error) {
-        console.error('Error during background update of Powerball data:', error.message);
-      } finally {
-        updateInProgress = false;
-      }
-    };
-
-    // Execute the update operation in a way that won't crash the server
-    updateOperation().catch(error => {
-      console.error('Uncaught error in background update:', error);
-      updateInProgress = false;
+  } catch (error) {
+    console.error('Failed to start background update:', error);
+    return res.status(409).json({
+      success: false,
+      message: 'Could not start update operation.',
+      error: error.message,
     });
-  });
+  }
 });
 
 // ✅ Endpoint: Serve stored Powerball data
-API_ROUTES.get('/powerball-data', (req, res) => {
+API_ROUTES.get('/powerball-data', async (req, res) => {
   try {
-    // Use absolute path - public folder is in the same directory as server.js
-    const filePath = path.join(process.cwd(), 'public', 'powerball_results.json');
-    const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    const fileContent = await fs.readFile(DATA_FILE_PATH, 'utf8');
+    const data = JSON.parse(fileContent);
     res.json(data);
   } catch (error) {
     console.error('Error reading Powerball data:', error);
@@ -158,11 +170,9 @@ API_ROUTES.get('/powerball-data', (req, res) => {
 });
 
 // ✅ Endpoint: Check file status
-API_ROUTES.get('/powerball-status', (req, res) => {
+API_ROUTES.get('/powerball-status', async (req, res) => {
   try {
-    // Use absolute path - public folder is in the same directory as server.js
-    const filePath = path.join(process.cwd(), 'public', 'powerball_results.json');
-    const stats = fs.statSync(filePath);
+    const stats = await fs.stat(DATA_FILE_PATH);
     res.json({
       success: true,
       lastUpdated: stats.mtime,

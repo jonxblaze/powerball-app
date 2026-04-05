@@ -1,5 +1,18 @@
 
 
+import { extractWinningNumbers } from './powerballApi.js';
+
+const toCombinationKey = (mainBalls, powerball) => `${mainBalls.join('-')}|${powerball}`;
+
+const buildHistoricalCombinationSet = (allWinningNumbers) => {
+  const keys = allWinningNumbers.map((numbers) => {
+    const mainBalls = [...numbers.slice(0, 5)].sort((a, b) => a - b);
+    const powerball = numbers[numbers.length - 1];
+    return toCombinationKey(mainBalls, powerball);
+  });
+  return new Set(keys);
+};
+
 /**
  * Sophisticated algorithm combining multiple approaches
  * @param {Array} allWinningNumbers - Array of all historical winning number sets
@@ -34,17 +47,13 @@ export const generateSophisticatedNumbers = (allWinningNumbers, algorithmType = 
       break;
   }
 
+  const historicalCombinations = buildHistoricalCombinationSet(allWinningNumbers);
+
   // Check if the generated combination already exists in historical data
   if (result) {
-    const generatedCombination = [...result.mainBalls, result.powerball].sort((a, b) => a - b);
-    
-    // Convert historical combinations to sorted arrays for comparison
-    const historicalCombinations = allWinningNumbers.map(numbers => [...numbers].sort((a, b) => a - b));
-    
-    // Check if the generated combination matches any historical combination
-    const isDuplicate = historicalCombinations.some(historical => 
-      JSON.stringify(historical) === JSON.stringify(generatedCombination)
-    );
+    const generatedMainBalls = [...result.mainBalls].sort((a, b) => a - b);
+    const generatedKey = toCombinationKey(generatedMainBalls, result.powerball);
+    const isDuplicate = historicalCombinations.has(generatedKey);
     
     // If it's a duplicate, try again with more randomness (up to 10 times)
     if (isDuplicate) {
@@ -52,11 +61,9 @@ export const generateSophisticatedNumbers = (allWinningNumbers, algorithmType = 
       for (let i = 0; i < 10; i++) {
         // Regenerate with more randomness by using different algorithm
         const newResult = generateByCombinedApproach(allWinningNumbers);
-        const newCombination = [...newResult.mainBalls, newResult.powerball].sort((a, b) => a - b);
-        
-        const isStillDuplicate = historicalCombinations.some(historical => 
-          JSON.stringify(historical) === JSON.stringify(newCombination)
-        );
+        const newMainBalls = [...newResult.mainBalls].sort((a, b) => a - b);
+        const newKey = toCombinationKey(newMainBalls, newResult.powerball);
+        const isStillDuplicate = historicalCombinations.has(newKey);
         
         if (!isStillDuplicate) {
           return newResult;
@@ -71,46 +78,24 @@ export const generateSophisticatedNumbers = (allWinningNumbers, algorithmType = 
 
   return result;
 };
-
 /**
  * Fetches and parses the Powerball results from the API endpoint
  * @returns {Promise<Object>} Object with winningNumbers array and sorted original data
  */
 export const parsePowerballData = async () => {
   try {
-    // Determine API base: Use VITE_API_BASE if set, otherwise use deployed server
-    // Set VITE_API_BASE='' to use relative URLs (for local proxy) or another URL to override
-    const apiBase = (import.meta?.env?.VITE_API_BASE !== undefined 
-      ? import.meta.env.VITE_API_BASE 
-      : 'https://app.jbwebdev.com/app').replace(/\/$/, '');
+    const apiBase = (import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '');
     const response = await fetch(`${apiBase}/api/powerball-data`);
     if (!response.ok) {
       throw new Error(`Failed to load Powerball data: ${response.status} ${response.statusText}`);
     }
     const data = await response.json();
-    
-    // Sort the data by DrawDate to ensure chronological order, with most recent first
     const sortedData = data.sort((a, b) => {
       const dateA = new Date(a.DrawDate);
       const dateB = new Date(b.DrawDate);
-      return dateB - dateA; // Sort in descending order (most recent first)
+      return dateB - dateA;
     });
-    
-    // Transform the sorted JSON data to the format expected by the algorithms
-    // Each entry has WinningNumbers with keys 0-5, where 0-4 are main balls and 5 is Powerball
-    const winningNumbers = sortedData.map(entry => {
-      const numbers = [];
-      
-      // Extract numbers 0-5 from the WinningNumbers object
-      for (let i = 0; i <= 5; i++) {
-        if (entry.WinningNumbers && entry.WinningNumbers[i]) {
-          numbers.push(parseInt(entry.WinningNumbers[i].Number));
-        }
-      }
-      
-      return numbers;
-    }).filter(numbers => numbers.length === 6); // Ensure we have exactly 6 numbers (5 main + 1 Powerball)
-    
+    const winningNumbers = extractWinningNumbers(sortedData);
     return { winningNumbers, sortedData };
   } catch (error) {
     console.error('Error parsing Powerball data:', error);
@@ -123,45 +108,28 @@ export const parsePowerballData = async () => {
  * @returns {Promise<Object>} Response from the update endpoint
  */
 export const updatePowerballData = () => {
-  // Determine API base: Use VITE_API_BASE if set, otherwise use deployed server
-  // Set VITE_API_BASE='' to use relative URLs (for local proxy) or another URL to override
-  const apiBase = (import.meta?.env?.VITE_API_BASE !== undefined 
-    ? import.meta.env.VITE_API_BASE 
-    : 'https://app.jbwebdev.com/app').replace(/\/$/, '');
-  
-  // Use the image technique for truly silent requests that don't log to console
-  // This creates an img element and sets its src, which makes a GET request
-  // Since our server endpoint is expecting POST, we'll use a different approach
-  // The most silent request is fetch with no-cors, but there's still the server 500 issue
-  
-  // The most reliable way to avoid console logs for network errors is to use an 
-  // iframe or image request, but since we need to make a POST request, 
-  // we'll use sendBeacon if available (which is silent) or fallback to fetch in a try-catch
-  try {
-    // Since sendBeacon doesn't support application/json, we'll just use an empty body
-    // and our server endpoint doesn't need the body anyway
-    if (navigator.sendBeacon) {
-      // sendBeacon is designed to be "fire and forget" without console errors
-      navigator.sendBeacon(`${apiBase}/api/update-powerball`, new Blob([], { type: 'application/json' }));
-    } else {
-      // Fallback to fetch with error suppression
-      fetch(`${apiBase}/api/update-powerball`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({}),
-        mode: 'no-cors'
-      }).catch(() => {}); // Ignore errors silently
-    }
-  } catch (e) {
-    // If everything fails, silently ignore
-    console.log("Update initiated via fallback method");
-  }
+  const apiBase = (import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '');
 
-  // Return a resolved promise immediately to indicate success
-  // The actual update runs in the background independently
-  return Promise.resolve({ success: true, message: "Update initiated in background" });
+  return fetch(`${apiBase}/api/update-powerball`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({})
+  }).then(async (response) => {
+    if (response.status === 409) {
+      return {
+        success: true,
+        message: 'Update already in progress'
+      };
+    }
+
+    if (!response.ok) {
+      throw new Error(`Failed to initiate update: ${response.status} ${response.statusText}`);
+    }
+
+    return response.json();
+  });
 };
 
 /**

@@ -4,10 +4,12 @@ A React app that generates Powerball number combinations from historical draw da
 
 ### Features
 - Update historical Powerball results via backend endpoint
+- Automatic backend refresh after drawings (Mon/Wed/Sat at 8:05 PM PT)
 - Load and cache results locally in `public/powerball_results.json`
+- Durable lock-file protection prevents overlapping update runs
 - Multiple number-generation algorithms (frequency, hot/cold, balanced, pattern, statistical, combined)
 - Shows the most recent official winning numbers
-- Configurable update days (don’t fetch every app load)
+- Frontend loads cached/backend data without auto-triggering updates
 
 ## Getting Started
 
@@ -35,26 +37,25 @@ Vite proxies API calls from the browser to the backend (see `vite.config.js`):
 - `'/api' -> http://localhost:5001`
 
 ### Configuration
-- Control which days the app attempts to refresh data automatically at startup via `VITE_UPDATE_DAYS` (comma‑separated list of 0–6 where 0=Sun ... 6=Sat). Default is `1,3,6` (Mon, Wed, Sat).
-
-Example `.env`:
-```bash
-VITE_UPDATE_DAYS=1,3,6
-```
-Restart `npm run dev` after changing env vars.
+- Optional: set `VITE_API_BASE` in `.env` to point the frontend to a different API host.
+- By default, Vite proxy and relative `/api` paths are used in local development.
 
 ### API Endpoints (Express)
 - `POST /api/update-powerball`
   - Fetches all pages of draw results from the California Lottery API and saves them to `public/powerball_results.json`.
+  - Uses a durable lock file (`public/.powerball_update.lock`) to prevent concurrent update runs.
   - This can be long‑running; the Vite proxy timeout is set higher to accommodate.
 - `GET /api/powerball-data`
   - Returns the contents of `public/powerball_results.json`.
 - `GET /api/powerball-status`
   - Returns basic info about the local results file (exists/lastUpdated).
+- `GET /api/update-status`
+  - Returns current update state (`updateInProgress`).
 
 ### Data Files
 - Backend saves canonical data to `public/powerball_results.json`.
-- The frontend tries to update on allowed days; otherwise it loads existing data. If the API is unavailable, it falls back to the local JSON in `public/`.
+- Backend uses `public/.powerball_update.lock` during update operations (auto-cleaned on completion; stale locks are recovered).
+- The frontend loads from the backend API first. If unavailable, it falls back to the local JSON in `public/`.
 
 ### Optional: Standalone fetch script
 There is also a standalone script that can fetch results without running the server:
@@ -70,6 +71,9 @@ npm run preview
 ```
 
 ## Troubleshooting
+- **`/api/powerball-data` appears twice on app load in development**:
+  - This is expected with React Strict Mode, which intentionally re-runs effects in development.
+  - Production builds call it once.
 - **Proxy error or socket hang up** when calling `/api/update-powerball`:
   - Ensure the backend is running on port 5001: `npm run server`
   - Restart the Vite dev server after changing `vite.config.js`
@@ -78,7 +82,7 @@ npm run preview
 - **CORS**: Express sets permissive CORS headers for local development
 
 ## Project Structure (key files)
-- `src/App.jsx` — UI, loads data, runs algorithms; only updates on allowed days
+- `src/App.jsx` — UI, loads data, runs algorithms
 - `src/utils/sophisticatedLottery.js` — data loading and number‑generation algorithms
 - `src/utils/fetchPowerball.js` — optional standalone fetch script
 - `server.js` — Express server with `/api` endpoints
