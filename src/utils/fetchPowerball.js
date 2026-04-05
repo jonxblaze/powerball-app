@@ -2,7 +2,7 @@
  * Fetches all Powerball draw results from the California Lottery API
  * and saves them as a JSON file.
  * 
- * This script updates the powerball_results.json file.
+ * This script updates public/powerball_results.json.
  *
  * Run:
  *   node fetchPowerball.js
@@ -11,7 +11,7 @@
 import fs from "fs";
 import { fetchAllDraws, GAMES } from "./powerballApi.node.js";
 
-const OUTPUT = "powerball_results.json";
+const OUTPUT = "public/powerball_results.json";
 
 async function fetchAllPowerball() {
   console.log("Fetching Powerball results from calottery.com ...");

@@ -62,7 +62,7 @@ There is also a standalone script that can fetch results without running the ser
 ```bash
 node src/utils/fetchPowerball.js
 ```
-This writes `powerball_results.json` to the project root. The Express server, by contrast, writes to `public/powerball_results.json` which the frontend reads by default.
+This writes to `public/powerball_results.json`, the same canonical file used by the Express server and frontend.
 
 ## Build & Preview
 ```bash
